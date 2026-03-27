@@ -124,17 +124,10 @@ video_clicked_cb(GtkGestureClick *gesture, int n_press,
 }
 
 static void
-open_dialog_response_cb(GObject *source, GAsyncResult *result, void *user_data)
+load_file(GtkWidget *video, GFile *file)
 {
-	GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
-	GtkWidget *video = user_data;
-	GFile *file;
 	GFileInfo *info;
 	const char *content_type;
-
-	file = gtk_file_dialog_open_finish(dialog, result, NULL);
-	if (!file)
-		return;
 
 	info = g_file_query_info(file,
 		G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
@@ -180,6 +173,20 @@ open_dialog_response_cb(GObject *source, GAsyncResult *result, void *user_data)
 
 	if (info)
 		g_object_unref(info);
+}
+
+static void
+open_dialog_response_cb(GObject *source, GAsyncResult *result, void *user_data)
+{
+	GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
+	GtkWidget *video = user_data;
+	GFile *file;
+
+	file = gtk_file_dialog_open_finish(dialog, result, NULL);
+	if (!file)
+		return;
+
+	load_file(video, file);
 	g_object_unref(file);
 }
 
@@ -331,23 +338,43 @@ do_video_player(GtkWidget *do_widget)
 	return window;
 }
 
+typedef struct {
+	char *path;
+} AppData;
+
 static void
 activate(GtkApplication *app, gpointer user_data)
 {
+	AppData *data = user_data;
 	GtkWidget *w = do_video_player(NULL);
 	gtk_window_set_application(GTK_WINDOW(w), app);
+
+	if (data->path) {
+		GtkWidget *overlay = gtk_window_get_child(GTK_WINDOW(w));
+		GtkWidget *video   = gtk_overlay_get_child(GTK_OVERLAY(overlay));
+		GFile *file = g_file_new_for_commandline_arg(data->path);
+		load_file(video, file);
+		g_object_unref(file);
+	}
 }
 
 int
 main(int argc, char *argv[])
 {
 	GtkApplication *app;
+	AppData data = { NULL };
 	int status;
+	int app_argc = 1;
+
+	if (argc >= 2)
+		data.path = argv[1];
 
 	app = gtk_application_new("org.gtk.mrplayer",
-		G_APPLICATION_DEFAULT_FLAGS);
-	g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-	status = g_application_run(G_APPLICATION(app), argc, argv);
+		G_APPLICATION_NON_UNIQUE);
+	g_signal_connect(app, "activate", G_CALLBACK(activate), &data);
+	/* pass only argv[0] to g_application_run so it never sees the
+	 * filename and doesn't try to handle it as a GFile */
+	status = g_application_run(G_APPLICATION(app), app_argc, argv);
 	g_object_unref(app);
 	return status;
 }
