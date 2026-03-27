@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Mr.Player
+Comment=Video Player for Mr.RobotOS
+Exec=mrplayer %f
+Icon=video-display
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;Player;GTK;
+MimeType=video/mp4;video/x-matroska;video/webm;video/ogg;video/avi;video/quicktime;video/x-msvideo;video/mpeg;image/jpeg;image/png;image/gif;image/webp;image/bmp;image/tiff;
+Keywords=video;player;media;image;viewer;
