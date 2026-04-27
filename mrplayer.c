@@ -251,6 +251,7 @@ do_video_player(GtkWidget *do_widget)
 				gtk_widget_get_display(do_widget));
 		gtk_window_set_title(GTK_WINDOW(window), "Mr.Player");
 		gtk_window_set_default_size(GTK_WINDOW(window), 800, 500);
+		gtk_window_set_icon_name(GTK_WINDOW(window), "mrplayer");
 		g_object_add_weak_pointer(G_OBJECT(window), (gpointer *)&window);
 
 		css = gtk_css_provider_new();

@@ -1,7 +1,7 @@
 CC      = gcc
 TARGET  = mrplayer
 SRC     = mrplayer.c
-PREFIX  = /usr/local
+PREFIX  = /usr
 
 CFLAGS  = $(shell pkg-config --cflags gtk4)
 LIBS    = $(shell pkg-config --libs gtk4)
