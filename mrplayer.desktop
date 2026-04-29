@@ -2,7 +2,7 @@
 Name=Mr.Player
 Comment=Video Player for Mr.RobotOS
 Exec=mrplayer %F
-Icon=/usr/share/icons/mrrobotos/scalable/apps/mrplayer.png
+Icon=mrplayer
 Terminal=false
 Type=Application
 Categories=AudioVideo;Video;Player;GTK;

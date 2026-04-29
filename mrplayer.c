@@ -1,4 +1,7 @@
 #include <gtk/gtk.h>
+#include <gdk/x11/gdkx.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
 
 static GtkWidget *window = NULL;
 static gboolean is_image = FALSE;
@@ -232,6 +235,49 @@ open_clicked_cb(GtkWidget *button, GtkWidget *video)
 		open_dialog_response_cb, video);
 }
 
+static void
+on_window_realize_icon(GtkWidget *widget, gpointer ud)
+{
+    /* Load PNG and set as _NET_WM_ICON using Xlib directly */
+    GdkPixbuf *pb = gdk_pixbuf_new_from_file(
+        "/usr/share/icons/mrrobotos/scalable/apps/mrplayer.png", NULL);
+    if (!pb) return;
+
+    int w = gdk_pixbuf_get_width(pb);
+    int h = gdk_pixbuf_get_height(pb);
+    guchar *pixels = gdk_pixbuf_get_pixels(pb);
+    int channels = gdk_pixbuf_get_n_channels(pb);
+    int rowstride = gdk_pixbuf_get_rowstride(pb);
+
+    unsigned long *data = g_malloc((2 + w * h) * sizeof(unsigned long));
+    data[0] = w;
+    data[1] = h;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            guchar *p = pixels + y * rowstride + x * channels;
+            guchar r = p[0], g2 = p[1], b = p[2];
+            guchar a = channels == 4 ? p[3] : 255;
+            data[2 + y * w + x] = ((unsigned long)a << 24) |
+                                   ((unsigned long)r << 16) |
+                                   ((unsigned long)g2 << 8) |
+                                   ((unsigned long)b);
+        }
+    }
+
+    GdkSurface *surface = gtk_native_get_surface(GTK_NATIVE(widget));
+    GdkDisplay *display = gdk_surface_get_display(surface);
+    Display *xdisplay = gdk_x11_display_get_xdisplay(display);
+    Window xwindow = gdk_x11_surface_get_xid(surface);
+    Atom net_wm_icon = XInternAtom(xdisplay, "_NET_WM_ICON", False);
+    XChangeProperty(xdisplay, xwindow, net_wm_icon,
+        XA_CARDINAL, 32, PropModeReplace,
+        (unsigned char*)data, 2 + w * h);
+    XFlush(xdisplay);
+
+    g_free(data);
+    g_object_unref(pb);
+}
+
 GtkWidget *
 do_video_player(GtkWidget *do_widget)
 {
@@ -251,7 +297,7 @@ do_video_player(GtkWidget *do_widget)
 				gtk_widget_get_display(do_widget));
 		gtk_window_set_title(GTK_WINDOW(window), "Mr.Player");
 		gtk_window_set_default_size(GTK_WINDOW(window), 800, 500);
-		gtk_window_set_icon_name(GTK_WINDOW(window), "mrplayer");
+		g_signal_connect(window, "realize", G_CALLBACK(on_window_realize_icon), NULL);
 		g_object_add_weak_pointer(G_OBJECT(window), (gpointer *)&window);
 
 		css = gtk_css_provider_new();
