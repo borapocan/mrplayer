@@ -1,5 +1,6 @@
 [Desktop Entry]
 Name=Mr.Player
+GenericName=Video Player
 Comment=Video Player for Mr.RobotOS
 Exec=mrplayer %F
 Icon=mrplayer
